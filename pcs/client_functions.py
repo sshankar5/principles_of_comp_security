@@ -1,3 +1,7 @@
+def socket_connection():
+    c_sock = socket(AF_INET, SOCK_STREAM)
+    return c_sock
+
 def create_user(username, pwd):
     c_sock = socket_connection()
     c_sock.connect((ds_ip, ds_port))
