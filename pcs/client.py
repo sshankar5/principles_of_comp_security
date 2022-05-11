@@ -125,10 +125,25 @@ def main():
                 print("Exiting <delete> mode...\n")
             else:
                 print("Delete didn't perform successfully")
-                
-                
-                
-                
+        elif "<CHDIR>" in c_input:
+                while not client_functions.validity(c_input):  # error check the input
+                    c_input = sys.stdin.readline()
+                chdirname = c_input.split()[1]
+                client_functions.CHANGE_DIR(chdirname, c_id, dv_map)
+                print("the value of ", dv_map[c_id])
+        elif "<RDIR>" in c_input:
+            while not client_functions.validity(c_input, 1):  # error check the input
+                c_input = sys.stdin.readline()
+            oldfilename = c_input.split()[1]
+            newfilename = c_input.split()[2]
+            client_functions.RENAME_DIR(oldfilename, newfilename, c_id, dv_map)
+        elif "<CDIR>" in c_input:
+            while not client_functions.validity(c_input):  # error check the input
+                c_input = sys.stdin.readline()
+            filename = c_input.split()[1]  # get file name from the input
+            client_functions.CREATE_DIR(filename, c_id, dv_map)
+            # handle the read request
+            print("Exiting <CDIR> mode...\n")                
         elif "<quit>" in c_input:
             sys.exit()
         else:
