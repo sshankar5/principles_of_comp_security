@@ -123,4 +123,309 @@ def replica_file(filename):
             print(msg)
             print("exception occured")
 
+def main():
+    T = Thread(target = thread_1)
+    T.setDaemon(True)                  
+    T.start()    
+    while 1:
+        client_socket, address = s_sock.accept()
+        msg = client_socket.recv(1024)
+        msg = c_Pkey.decrypt(msg).decode('utf-8')
+        # msg= msg.decode()
+        print("the request msg is", msg)
+        if "<GETPATH>" in msg:
+            id = msg.split("|")[1]
+            if id not in edv_map:
+                res="EMPTY"
+            else:   
+                res = edv_map[id]
+            print("the value of res", res)
+            res = c_Pkey.encrypt(res.encode('utf-8'))
+            client_socket.send(res)
+        elif "<DIRRENAME>" in msg:
+            res=""
+            file1=msg.split("|")[0]
+            file4=msg.split("|")[1]
+            file2=msg.split("|")[2]
+            file3=msg.split("|")[3]
+            serv=msg.split("|")[5]
+            if file3=="EMPTY":
+                dv_map[file2]=""
+                edv_map[file2]=""
+                cpath=curr_dir
+            else:
+                cpath=curr_dir+"\\"+edv_map[file2]
+            p=os.listdir(cpath)
+            print("the cureent path is",cpath)
+            print(" the directories in cpath is",p)
+            c=0
+            k=""
+            q=""
+            st=hashlib.sha256(file1.encode('utf-8')).hexdigest()
+            print("the value of st is",st)
+            sp=hashlib.sha256(file4.encode('utf-8')).hexdigest()
+            for i in p:
+                if ".txt" not in i:
+                    print("the value of i is",i)
+                    sp=hashlib.sha256(file4.encode('utf-8')).hexdigest()
+                    if st==i:
+                        k=cpath+"\\"+i
+                        print(k)
+                        q=i
+                        c=1
+                    if sp==i:
+                        c=2
+                        break
+            if c==2:
+                res="Already exsits a dir with this name"
+            elif c==1:
+                file5=hashlib.sha256(file4.encode('utf-8')).hexdigest()
+                k1=cpath+"\\"+file5
+                print("value of new dir ",k1)
+                os.rename(k,k1)
+                if dv_map[file2]!="": 
+                    res="SUCCESS"+'|'+dv_map[file2]
+                    p1=edv_map[file2]
+                else:
+                    res="SUCCESS"
+                    p1="EMPTY"
+                msg="<DIRRENAME>"+"|"+p1+"|"+q+"|"+file5+"|"+serv
+                replica_file(msg)
+            res= c_Pkey.encrypt(res.encode('utf-8'))
+            client_socket.send(res)
+        elif "<DIRCREATE>" in msg:
+            res=""
+            file1=msg.split("|")[0]
+            file2=msg.split("|")[1]
+            file3=msg.split("|")[2]
+            serv=msg.split("|")[4]
+            cpath=curr_dir
+            if file3=="EMPTY":
+                dv_map[file2]=""
+                edv_map[file2]=""
+            else:
+                cpath=curr_dir+"\\"+edv_map[file2]
+            p=os.listdir(cpath)
+            c=0
+            for i in p:
+                if ".txt" not in i:
+                    st=hashlib.sha256(file1.encode('utf-8')).hexdigest()
+                    if st==i:
+                        c=1
+                        res="Already exsits a dir with this name"
+                        break
+            if c==0:
+                file1=hashlib.sha256(file1.encode('utf-8')).hexdigest()
+                sk=cpath+"\\"+file1
+                print("the value of dir",sk)
+                os.mkdir(sk)
+                if dv_map[file2]!="": 
+                    res="SUCCESS"+'|'+dv_map[file2]
+                    g=edv_map[file2]
+                else:
+                    res="SUCCESS"
+                    g="EMPTY" 
+                msg="<DIRCREATE>"+"|"+g+"|"+file1+"|"+serv
+                replica_file(msg)   
+            res= c_Pkey.encrypt(res.encode('utf-8'))
+            client_socket.send(res)
+        elif "<DIRCHANGE>" in msg:
+            res=""
+            file1=msg.split("|")[0]
+            file2=msg.split("|")[1]
+            file3=msg.split("|")[2]
+            if file3=="EMPTY":
+                dv_map[file2]=""
+                edv_map[file2]=""
+                cpath=curr_dir
+            else:
+                cpath=curr_dir+"\\"+edv_map[file2]
+            if file1=="..":
+                if cpath==curr_dir or dv_map[file2]=="":
+                    res="you are present at the root directory idiot"
+                else:
+                    d=dv_map[file2].split("\\")
+                    e=edv_map[file2].split("\\")
+                    v=len(d)
+                    if v==1:
+                        dv_map[file2]=""
+                        edv_map[file2]=""
+                        res="SUCCESS"
+                    else:
+                        for i in range(v-1):
+                            if i==0:
+                                dv_map[file2]=d[i]
+                                edv_map[file2]=e[i]
+                            else:
+                                dv_map[file2]=dv_map[file2]+"\\"+d[i]
+                                edv_map[file2]=edv_map[file2]+"\\"+e[i]
+                        res="SUCCESS"+"|"+dv_map[file2]
+            else:
+                p=os.listdir(cpath)
+                c=0
+                for i in p:
+                    if ".txt" not in i:
+                        st=hashlib.sha256(file1.encode('utf-8')).hexdigest()
+                        if i==st:
+                            c=1
+                            cpath=cpath+"\\"+i
+                            # res="Already exsits a dir with this name"
+                            if dv_map[file2]=="":
+                                dv_map[file2]=file1
+                                print("you have entered this stupid block")
+                                edv_map[file2]=i
+                                res="SUCCESS"+"|"+dv_map[file2]
+                                c=1
+                                break
+                            else:
+                                dv_map[file2]=dv_map[file2]+"\\"+file1
+                                edv_map[file2]=edv_map[file2]+"\\"+i
+                                res="SUCCESS"+"|"+dv_map[file2]
+                                c=1
+                                break
+                if c==0:
+                    res="No such directory exsists"
+            res= c_Pkey.encrypt(res.encode('utf-8'))
+            client_socket.send(res)
+        elif "RENAME" in msg:
+            hi = "failure"
+            oldfilename = msg.split("|")[0]
+            newfilename = msg.split("|")[1]
+            id = msg.split("|")[5]
+            c_path = msg.split("|")[4]
+            repser = msg.split("|")[3]
+            v = c_path.split("\\")
+            if len(v) == 1:
+                if ".txt" not in c_path:
+                    curr_path = curr_dir + "\\" + edv_map[id]
+                    hs = edv_map[id]
+                else:
+                    curr_path = curr_dir
+                    hs = "EMPTY"
+            else:
+                curr_path = curr_dir + "\\" + edv_map[id]
+                hs = edv_map[id]
+            for x in os.listdir(curr_path):
+                if x.endswith(".txt"):
+                    size = len(x)
+                    x1 = x[:size - 4]
+                    x1 = c_Pkey.decrypt(x1.encode()).decode('utf-8')
+                    x1 += ".txt"
+                    if x1 == oldfilename:
+                        size1 = len(newfilename)
+                        newfilename = newfilename[:size1 - 4]
+                        newfilename = c_Pkey.encrypt(newfilename.encode('utf-8'))
+                        newfilename = newfilename.decode() + ".txt"
+                        p = x
+                        q = newfilename
+                        x = curr_path + "\\" + x
+                        newfilename = curr_path + "\\" + newfilename
+                        os.rename(x, newfilename)
+                        hi = "success"
+                        msg = p + "|" + q + "|" + "RENAME" + "|" + repser + "|" + hs
+                        replica_file(msg)
+                        break
+            hi = c_Pkey.encrypt(hi.encode('utf-8'))
+            client_socket.send(hi)
+        elif "DELETE" in msg:
+            hi = "failure"
+            file = msg.split("|")[0]
+            id = msg.split("|")[4]
+            repserv = msg.split("|")[2]
+            c_path = msg.split("|")[3]
+            v=c_path.split("\\")
+            if len(v)==1:
+                if ".txt" not in c_path:
+                    curr_path=curr_dir+"\\"+edv_map[id]
+                    hs=edv_map[id]
+                else:
+                    curr_path=curr_dir
+                    hs="EMPTY"
+            else:
+                curr_path=curr_dir+"\\"+edv_map[id]
+                hs=edv_map[id]
+            for x in os.listdir(curr_path):
+                if x.endswith(".txt"):
+                    size = len(x)
+                    x1 = x[:size - 4]
+                    x1 = c_Pkey.decrypt(x1.encode()).decode('utf-8')
+                    x1 += ".txt"
+                    if x1 == file:
+                        k = x
+                        print("the name of file is", k)
+                        x = curr_path + "\\" + x
+                        os.remove(x)
+                        hi = "success"
+                        msg1 = k + "|" + "DELETE" + "|" + repserv + "|" + hs
+                        replica_file(msg1)
+                        break
+            hi = c_Pkey.encrypt(hi.encode('utf-8'))
+            client_socket.send(hi)
+        elif msg != "" and "CHECK_VERSION" not in msg:
+            filename, rw, text, temp, path, id = msg.split("|")  # file path to perform read/write on
+            print("starting is ",filename)
+            msgs = []
+            res = ""
+            k = 0
+            v = path.split("\\")
+            print(v)
+            if len(v) == 1:
+                if ".txt" not in path:
+                    print("entered root block")
+                    curr_path = curr_dir + "\\" + edv_map[id]
+                    hs = edv_map[id]
+                else:
+                    curr_path = curr_dir
+                    hs = "EMPTY"
+            else:
+                curr_path = curr_dir + "\\" + edv_map[id]
+                hs = edv_map[id]
+            q = ""
+            for x in os.listdir(curr_path):
+                if x.endswith(".txt"):
+                    size = len(x)
+                    print("the value of x1 is:", x)
+                    q = x
+                    x1 = x[:size - 4]
+                    print("the value of x1 is:", x1)
+                    x1 = c_Pkey.decrypt(x1.encode('utf-8')).decode('utf-8')
+                    x1 += ".txt"
+                    if x1 == filename:
+                        print("entered the exisisting file block")
+                        res = curr_path + "\\" + x
+                        k = 1
+                        break
+            if (len(res) == 0):
+                siz = len(filename)
+                filename = filename[:siz - 4]
+                print(filename)
+                re = c_Pkey.encrypt(filename.encode('utf-8'))
+                res = re.decode() + ".txt"
+                q = res
+                res = curr_path + "\\" + res
+            print("the file name is: ", res)
+            response = read_write_request(res, rw, text, fv_map, k,id)  # perform the read/write and check if successful
+            client_response(response, rw,
+                            client_socket)  # send back write successful message or send back text for client to read
+            if rw !="r" and response == "File does not exist":
+                continue
+            else:
+                msg1 = res + "|" + hs + "|" + temp + "|" + q
+                print("msg1 is ", msg1)
+                replica_file(msg1)
+        elif "CHECK_VERSION" in msg:
+            c_file = msg.split("|")[1]  # parse the version number to check
+            for x in os.listdir():
+                if x.endswith(".txt"):
+                    size = len(x)
+                    x1 = x[:size - 4]
+                    x1 = c_Pkey.decrypt(x1).decode('utf-8')
+                    x1 += ".txt"
+                    if x1 == c_file:
+                        print("Checking version of " + c_file)
+                        hi = c_Pkey.encrypt(str(fv_map[x]).encode('utf-8'))
+                        client_socket.send(hi)
+                        client_socket.close()
 
+if __name__ == "__main__":
+    main()
