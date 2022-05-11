@@ -114,6 +114,21 @@ def main():
                 # filename2 = newfilename + ".txt"
                 # fv_map[filename2] = a
                 # del fv_map[filename1]
+         elif "<delete>" in c_input:
+            while not client_functions.validity(c_input):  # error check the input
+                c_input = sys.stdin.readline()
+            filename = c_input.split()[1]  # get file name from the input
+            resp = client_functions.handle_delete(filename, c_id, dv_map)  # handle the read request
+            if resp:
+                filename = filename + ".txt"
+                del fv_map[filename]
+                print("Exiting <delete> mode...\n")
+            else:
+                print("Delete didn't perform successfully")
+                
+                
+                
+                
         elif "<quit>" in c_input:
             sys.exit()
         else:
