@@ -273,7 +273,29 @@ def user_verification(client_msg):
         return username
     else:
         return ""
-
+    
+def status_check(recv_msg):
+    s=recv_msg.split(' ')
+    filesize = os.path.getsize("filemappings.txt")
+    if filesize==0:
+        return "lite"
+    with open("filemappings.txt", 'rb') as file:
+        # j = json.load(file)
+        cred_decrypt = file.read()
+        dat = c_Pkey.decrypt(cred_decrypt).decode('utf-8')
+        j=eval(dat)
+    print(j)
+    print(s)
+    if len(s)-2 !=len(j.keys()):
+            print("this server is compromised",s[1])
+            return
+    for i in range(len(s)):
+        if i==0 or i==1:
+            pass
+        else:
+            if s[i] not in j:
+                print("this particular server is malicious", s[1])
+                break
 
     
 def main():
