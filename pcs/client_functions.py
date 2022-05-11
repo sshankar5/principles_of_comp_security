@@ -437,7 +437,7 @@ def handle_delete(file, c_id, dv_map):
             os.remove(cache_filepath)
         return True
     
-    def CHANGE_DIR(dirname,cid,dvmap):
+def CHANGE_DIR(dirname,cid,dvmap):
     if cid not in dvmap:
         dvmap[cid]="EMPTY"
     print(dvmap[cid])
