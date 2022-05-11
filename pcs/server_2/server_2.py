@@ -65,6 +65,21 @@ def read_write_request(filename, rw, write_data, fv_map, c_id):
         except IOError:  # IOError occurs when open(filepath,RW) cannot find the file requested
             print(filename + " does not exist\n")
             return "File does not exist", -1
+        
+def client_response(resp, rw, client_socket):
+    if resp[0] == "write request is successful":
+        reply = "File successfully written to..." + str(resp[1])
+    elif resp== "You are not permitted":
+        reply = "File does not exist"
+    elif resp[1] != -1 and rw == "r":
+        reply = resp[0]
+    elif resp[1] == -1:
+        reply = resp[0]
+    reply = c_Pkey.encrypt(reply.encode('utf-8'))
+    print("reply in client response is ",reply)
+    print("the data we are transmitting is:", reply)
+    client_socket.send(reply)
+ 
 
 def main():
     while 1:
