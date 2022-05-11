@@ -122,6 +122,72 @@ def replica_file(filename):
         except error as msg:
             print(msg)
             print("exception occured")
+            
+            
+def read_write_request(filename, rw, write_data, fv_map, k, c_id):
+    cs1 = socket_connection()
+    filename1 = filename.split("\\")[-1]
+    size = len(filename1)
+    filename1 = filename1[:size - 4]
+    fn = c_Pkey.decrypt(filename1.encode('utf-8')).decode('utf-8')
+    print("filename sent is ",fn)
+    send_query = fn + "|" + c_id + "|" +"GET_KEY"
+    send_query = c_Pkey.encrypt(send_query.encode('utf-8'))
+    cs1.connect((ds_ip, ds_port))
+    cs1.send(send_query)
+    reply = cs1.recv(1024)
+    reply = c_Pkey.decrypt(reply).decode('utf-8')
+    if reply == "Not permitted":
+        return "You are not permitted"
+    else:
+        u_key = reply
+        u_Pkey = Fernet(u_key)
+    if rw == "a+":  # if write request
+        if filename not in fv_map:
+            fv_map[filename] = 0  # if empty (ie. if its a new file), set the version no. to 0
+        else:
+            fv_map[filename] += 1  # increment version no.
+        print("filename for server ",filename)
+        if k == 1:
+            file = open(filename, "r")
+            filedata = file.read()  # read the file's text into a string
+            filedata = u_Pkey.decrypt(filedata.encode()).decode('utf-8')
+            write_data = filedata + write_data
+            file.close()
+        file = open(filename, "w")
+        print("file opened")
+        write_data = u_Pkey.encrypt(write_data.encode('utf-8'))
+        write_data = write_data.decode()
+        print("write data is: ", write_data)
+        file.write(write_data)
+        print("New version of " + filename + " is " + str(fv_map[filename]))
+        return "write request is successful", fv_map[filename]
+    elif rw == "r":  # if read request
+        try:
+            file = open(filename, rw)
+            filedata = file.read()  # read the file's text into a string
+            filedata = u_Pkey.decrypt(filedata).decode('utf-8')
+            if filename not in fv_map:
+                fv_map[filename] = 0
+            return (filedata, fv_map[filename])
+        except IOError:  # IOError occurs when open(filepath,RW) cannot find the file requested
+            print(filename + " does not exist\n")
+            return "File does not exist", -1
+
+
+def client_response(resp, rw, client_socket):
+    if resp[0] == "write request is successful":
+        reply = "File successfully written to..." + str(resp[1])
+    elif resp[0] == "You are not permitted":
+        reply = "File does not exist"
+    elif resp[1] != -1 and rw == "r":
+        reply = resp[0]
+    elif resp[1] == -1:
+        reply = resp[0]
+    reply = c_Pkey.encrypt(reply.encode('utf-8'))
+    client_socket.send(reply)
+
+ 
 
 def main():
     T = Thread(target = thread_1)
