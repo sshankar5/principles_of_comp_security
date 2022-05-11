@@ -23,6 +23,136 @@ def servers():
             }
         ]})
     return s1_ip+"|"+str(s1_port)+"|"+k
+def create_mappings(client_msg):
+    filename, t1, t2, author, path, permission, user_list = client_msg.split('|')
+    print(filename)
+    permission1 = get_permission(permission)
+    print(permission1)
+    filesize = os.path.getsize("filemappings.txt")
+    with open("filemappings.txt", 'r') as file:
+        cred_decrypt = file.read()
+        print("cred_decrypt is ", cred_decrypt)
+        if filesize != 0:
+            dat1 = c_Pkey.decrypt(cred_decrypt.encode()).decode('utf-8')
+            print("dat1 is ",dat1)
+            jdata = eval(dat1)
+        else:
+            jdata = {}
+        if filename in jdata:
+            return None
+        else:
+            print("entered the creation of json block")
+            data = {}
+            data[filename] = {}
+            data[filename]['filename'] = filename + ".txt"
+            if path=="EMPTY":
+                data[filename]['path'] =filename + ".txt"
+            else:
+                data[filename]['path'] =path
+            data[filename]['author'] = author
+            data[filename]['primary'] = {}
+            data[filename]['primary']['server_name'] = s1_ip
+            data[filename]['primary']['portno'] = 8001
+            data[filename]['replicas'] = []
+            data2 = {}
+            data3 = {}
+            data2['server_name'] = s2_ip
+            data3['server_name'] = s3_ip
+            data2['portno'] = 8002
+            data3['portno'] = 8003
+
+            data[filename]['replicas'].append(data2)
+            data[filename]['replicas'].append(data3)
+            data[filename]['permission'] = permission1
+            data[filename]['permitted_users'] = user_list
+            jdata.update(data)
+            print("%%%%%%%%%%%%%%%%%", jdata)
+            dat = str(jdata)
+            d1 = c_Pkey.encrypt(dat.encode('utf-8'))
+            with open("filemappings.txt", 'wb') as myfile:
+                myfile.write(d1)
+            return "file mapped successfully"
+
+
+def check_mappings(client_msg, list_files, flag=0):
+    print("hiiiiiiiiiiiiiiiiii ", client_msg)
+    filename = client_msg.split('|')[0]
+    rw = client_msg.split('|')[1]
+    path=client_msg.split('|')[4]
+    if path == "EMPTY":
+        path = filename + ".txt"
+    if rw == 'w' or rw == 'a+':
+        m = "read_write"
+    else:
+        m = "read_only"
+    uname = client_msg.split('|')[3]
+    filesize = os.path.getsize("filemappings.txt")
+    with open("filemappings.txt", 'rb') as file:
+        if filesize == 0:
+            return None
+        cred_decrypt = file.read()
+        dat = c_Pkey.decrypt(cred_decrypt).decode('utf-8')
+        j = eval(dat)
+        print(type(j))
+        file_row = ""
+        data = {}
+        for key, i in j.items():
+            if not list_files:
+                print(key)
+                print(filename)
+                print(m)
+                print(path)
+                print(i['path'])
+                print(uname)
+                if (key == filename and path==i['path']) and rw == 'w':
+                    print(i['author'])
+                    print(i['permission'])
+                    if i['permission'] == m:
+                        print('WRITING')
+                        actual_filename = i['filename']  # get actual filename (eg. file123.txt)
+                        server_addr = str(i['primary']['server_name'])  # get the file's file server IP address
+                        server_port = str(i['primary']['portno'])  # get the file's file server PORT number
+                        replicas = i['replicas']
+                        path=i['path']
+                        print("actual_filename: " + actual_filename)
+                        print("server_addr: " + server_addr)
+                        print("server_port: " + server_port)
+                        return actual_filename + "|" + server_addr + "|" + server_port + "|" + str(replicas) + "|" + path
+                    if uname == i['author']:
+                        print('WRITING')
+                        actual_filename = i['filename']  # get actual filename (eg. file123.txt)
+                        server_addr = str(i['primary']['server_name'])  # get the file's file server IP address
+                        server_port = str(i['primary']['portno'])  # get the file's file server PORT number
+                        replicas = i['replicas']
+                        path=i['path']
+                        print("actual_filename: " + actual_filename)
+                        print("server_addr: " + server_addr)
+                        print("server_port: " + server_port)
+                        return actual_filename + "|" + server_addr + "|" + server_port + "|" + str(replicas) + "|" + path
+
+                elif (key == filename and path==i['path']) and rw == 'r':
+                    if i['permission'] != "Restricted":
+                        print('Reading')
+                        actual_filename = i['filename']  # get actual filename (eg. file123.txt)
+                        data['replicas'] = i['replicas']
+                        path = i['path']
+                        print("actual_filename: " + actual_filename)
+                        print("server_data: " + str(data))
+                        return actual_filename + "|" + str(data) + "|" +path
+
+                    if uname == i['author']:
+                        print('Reading')
+                        actual_filename = i['filename']  # get actual filename (eg. file123.txt)
+                        data['replicas'] = i['replicas']
+                        path = i['path']
+                        print("actual_filename: " + actual_filename)
+                        print("server_data: " + str(data))
+                        return actual_filename + "|" + str(data) + "|" +path
+            else:
+                file_row = file_row + key + "\n"
+        if list_files == True:
+            return file_row
+    return None  # if file does not exist return None
 
 def change_mappings(client_msg):
     print("change mapping: ",client_msg)
