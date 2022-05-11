@@ -143,3 +143,157 @@ def user_verification(client_msg):
         return username
     else:
         return ""
+
+
+    
+def main():
+    while 1:
+        c_sock, addr = s_sock.accept()
+        recv_msg = c_sock.recv(1024)
+        print("host is ", addr)
+        print("++++++++++++++", recv_msg)
+        try:
+            recv_msg = c_Pkey.decrypt(recv_msg).decode('utf-8')
+        except:
+            recv_msg = c_Pkey.decrypt(recv_msg).decode('utf-8')
+        response = ""
+        print("++++++++++++++", recv_msg)
+        if "server_status_check" in recv_msg:
+            status_check(recv_msg)
+        elif "GET_KEY" in recv_msg:
+            fn, c_id, temp = recv_msg.split("|")
+            print("filename fn is ",fn)
+            filesize = os.path.getsize("filemappings.txt")
+            ans = ""
+            with open("filemappings.txt", 'rb') as file:
+                if filesize == 0:
+                    ans = "Not permitted"
+                else:
+                    cred_decrypt = file.read()
+                    print("cred_decrypt is ",cred_decrypt)
+                    dat = c_Pkey.decrypt(cred_decrypt).decode('utf-8')
+                    j = eval(dat)
+                    # file2=c_Pkey.encrypt(file2.encode('utf-8'))
+                    for key, i in j.items():
+                        print("key is ",key)
+                        print("fn is ",fn)
+                        if key == fn:
+                            print("permitted list ",j[key]['permitted_users'])
+                            if (j[key]['permitted_users'].find(c_id) == -1 and j[key]['author']!=c_id):
+                                ans = "Not permitted"
+                                print("sent not permitted")
+                            else:
+                                author = j[key]['author']
+                                with open("logins.csv", 'rt') as file:
+                                    d_reader = csv.DictReader(file,
+                                                          delimiter=',')  # read file as a csv file, taking values after commas
+                                    header = d_reader.fieldnames  # skip header of csv file
+                                    for row in d_reader:
+                                        if row['user_id'] == author:
+                                            print("found the key for user")
+                                            ans = row['key']
+                                print("sent the key : ",ans)
+                            break
+                print("ans issssssss ", ans)
+                ans = c_Pkey.encrypt(ans.encode('utf=8'))
+                c_sock.send(ans)
+                c_sock.close()
+                continue
+        elif "<CREATEDIR>" in recv_msg or "<CHANGEDIR>" in recv_msg:
+            response = servers()
+        elif "<RNAMEDIR>" in recv_msg:
+            response = servers()
+        elif "<RENAMEDIR>" in recv_msg:
+            response = change_path(recv_msg)
+        elif "USER_CREATE" in recv_msg:
+            response = create_userid(recv_msg)
+            response = c_Pkey.encrypt(response.encode())
+            c_sock.send(response)  # send the file information or non-existance message to the client
+            c_sock.close()
+            continue
+        elif "USER_VERIFY" in recv_msg:
+            response = user_verification(recv_msg)
+            response = c_Pkey.encrypt(response.encode('utf-8'))
+            c_sock.send(response)  # send the file information or non-existance message to the client
+            c_sock.close()
+            continue
+        elif "CREATE" in recv_msg:
+            print("started the mapping scenario")
+            response1 = create_mappings(recv_msg)
+            if response1 is not None:
+                response = check_mappings(recv_msg, False, 1)
+            else:
+                response = "FILE_Already_EXIST"
+                print("RESPONSE: \n" + response)
+                print("\n")
+        elif "LIST" in recv_msg:
+            print("entered the dummy block")
+            response = check_mappings(recv_msg, True)  # check the mappings for the file
+        elif "RENAME" in recv_msg:
+            filename = recv_msg.split('|')[0]
+            fn = filename.split()[0]
+            author = recv_msg.split('|')[3]
+            filesize = os.path.getsize("filemappings.txt")
+            ans = ""
+            with open("filemappings.txt", 'rb') as file:
+                if filesize == 0:
+                    ans = "Not permitted"
+                else:
+                    cred_decrypt = file.read()
+                    print("cred_decrypt is ",cred_decrypt)
+                    dat = c_Pkey.decrypt(cred_decrypt).decode('utf-8')
+                    j = eval(dat)
+                    # file2=c_Pkey.encrypt(file2.encode('utf-8'))
+                    for key, i in j.items():
+                        print("key is ",key)
+                        print("fn is ",fn)
+                        if key == fn:
+                            if (j[key]['author']==author):
+                                response = change_mappings(recv_msg)
+                            elif (j[key]['permitted_users'].find(author) == -1):
+                                response = "Not permitted"
+                                print("sent not permitted")
+                            else:
+                                response = change_mappings(recv_msg)
+        elif "DELETE" in recv_msg:
+            fn = recv_msg.split('|')[0]
+            author = recv_msg.split('|')[3]
+            filesize = os.path.getsize("filemappings.txt")
+            ans = ""
+            with open("filemappings.txt", 'rb') as file:
+                if filesize == 0:
+                    ans = "Not permitted"
+                else:
+                    cred_decrypt = file.read()
+                    print("cred_decrypt is ",cred_decrypt)
+                    dat = c_Pkey.decrypt(cred_decrypt).decode('utf-8')
+                    j = eval(dat)
+                    # file2=c_Pkey.encrypt(file2.encode('utf-8'))
+                    for key, i in j.items():
+                        print("key is ",key)
+                        print("fn is ",fn)
+                        if key == fn:
+                            if (j[key]['author']==author):
+                                response = delete_mappings(recv_msg)
+                            elif (j[key]['permitted_users'].find(author) == -1):
+                                response = "Not permitted"
+                                print("sent not permitted")
+                            else:
+                                response = delete_mappings(recv_msg)                                                 
+        else:
+            response = check_mappings(recv_msg, False)
+        if response is not None:  # for existance of file
+            response = str(response)
+            print("RESPONSE: \n" + response)
+            print("\n")
+        else:
+            response = "FILE_DOES_NOT_EXIST"
+            print("RESPONSE: \n" + response)
+            print("\n")
+        response = c_Pkey.encrypt(response.encode('utf-8'))
+        print("response over the network: ", response)
+        c_sock.send(response)  # send the file information or non-existance message to the client
+        c_sock.close()
+
+if __name__ == "__main__":
+    main()
