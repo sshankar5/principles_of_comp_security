@@ -31,7 +31,7 @@ def user_verify():
             print("user credentials didn't match")
     return u, username
   
-  def uinstruct():
+def uinstruct():
     print("Please select one option:")
     print("1. New User Creation")
     print("2. Login")
