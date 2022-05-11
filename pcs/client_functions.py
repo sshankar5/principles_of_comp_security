@@ -22,11 +22,21 @@ def verification_user(username, pwd):
     return resp
   
   
-  
-  
-  
-  
-  
+  def send_rename(c_sock, file, filename_DS, IP_DS, PORT_DS, c_id, replicate_servers,path):
+    file += ".txt"
+    send_msg = file + "|" + filename_DS + "|" + "RENAME" + "|" + replicate_servers + "|" + path + "|" + c_id
+    send_msg = c_Pkey.encrypt(send_msg.encode('utf-8'))
+    check_cache(filename_DS, file, c_id, 0)
+    print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%5", PORT_DS)
+    c_sock.connect((IP_DS, PORT_DS))
+    c_sock.send(send_msg)
+    resp = c_sock.recv(1024)
+    resp = c_Pkey.decrypt(resp).decode('utf-8')
+    if resp == "Not permitted":
+        print("You are not permitted")
+    elif resp is not None:
+        print("rename was success")
+
   
   def send_delete(c_sock, file, filename_DS, IP_DS, PORT_DS, c_id, replicate_servers, path):
     msg = filename_DS + "|" + "DELETE" + "|" + replicate_servers + "|" + path + "|" + c_id
@@ -43,10 +53,28 @@ def verification_user(username, pwd):
   
   
   
-  
- 
-  
-  
+ def handle_rename(oldfilename, newfilename, c_id, dv_map):
+    c_sock = socket_connection()  # create socket to directory service
+    if c_id not in dv_map:
+        dv_map[c_id] = "EMPTY"
+    filename = oldfilename + " " + newfilename
+    resp = directory(c_sock, c_id, filename, 'r', 1, False, dv_map[c_id])  # send file name to directory service
+    c_sock.close()  # close directory service connection
+    resp = c_Pkey.decrypt(resp).decode('utf-8')
+
+    if resp == "FILE_DOES_NOT_EXIST":
+        print("you don't have access to rename this file or this file is not present in your system")
+        return False
+    elif resp == "Not permitted":
+        print("You are not permitted")
+        return False
+    else:
+        c_sock = socket_connection()
+        filename_DS, IP_DS, PORT_DS, replicate_servers, path = resp.split('|')
+        send_rename(c_sock, oldfilename, filename_DS, IP_DS, int(PORT_DS), c_id, replicate_servers, path)
+        return True
+
+    
   
   def handle_delete(file, c_id, dv_map):
     c_sock = socket_connection()  # create socket to directory service
