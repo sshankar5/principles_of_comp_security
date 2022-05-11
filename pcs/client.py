@@ -1,5 +1,6 @@
 import sys
 import getpass
+import time
 from builtins import input
 
 import client_functions
@@ -56,3 +57,49 @@ def main():
                 break
         else:
             print("invalid input")
+    client_functions.menu()
+    fv_map = {}
+    dv_map = {}
+    while 1:
+        c_input = sys.stdin.readline()
+        if "<create>" in c_input:
+            while not client_functions.validity(c_input):  # error check the input
+                c_input = sys.stdin.readline()
+            flag = 0
+            temp, filename, aType = c_input.split()
+            print("Type the users you want to give permission\n")
+            print("<end> to finish writing")
+            print("-----------------------------------")
+            text = ""
+            j = 0
+            while True:
+                u = sys.stdin.readline()
+                u = u.strip('\n')
+                if "<end>" in u:  # check if user wants to finish writing
+                    break
+                else:
+                    if j == 0:
+                        text += u
+                    else:
+                        text += "," + u
+                j += 1
+            print("-----------------------------------")
+            print("permitted user's list is ", text)
+            resp = client_functions.handle_create(filename, aType, c_id, flag, fv_map, dv_map, text)
+            if resp:
+                print("file has been created successfully")
+        elif "<write>" in c_input:
+            while not client_functions.validity(c_input):
+                c_input = sys.stdin.readline()
+            filename = c_input.split()[1]
+            flag = 1
+            resp = client_functions.handle_write(filename, c_id, flag, fv_map, dv_map)
+            if not resp:
+                print("File unlock polling timeout")
+            print("<write> mode exitted")
+        elif "<read>" in c_input:
+            while not client_functions.validity(c_input):
+                c_input = sys.stdin.readline()
+            filename = c_input.split()[1]
+            client_functions.handle_read(filename, fv_map, c_id, dv_map)
+            print("<read> mode exitted")
