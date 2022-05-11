@@ -39,7 +39,17 @@ def verification_user(username, pwd):
     c_sock.close()
     resp = c_Pkey.decrypt(resp).decode('utf-8')
     return resp
-  
+ 
+def check_cache(filename_DS, file, c_id, flag):
+    cache_filepath = curr_path + "\\client_cache" + c_id + "\\" + file  # append the cache folder and filename to the path
+    if flag == 0:
+        if os.path.exists(cache_filepath):
+            new_filepath = curr_path + "\\client_cache" + c_id + "\\" + filename_DS
+            os.rename(cache_filepath, new_filepath)
+    else:
+        if os.path.exists(cache_filepath):
+            os.remove(cache_filepath)
+
 
 def menu():
     print("\n----------------MENU---------------")
@@ -55,7 +65,22 @@ def menu():
     print("<quit> - Quit from the application")
     print("-------------------------------------")
 
-    
+def cache(filename_DS, text, rw, c_id,path = " "):
+    cache_filepath = curr_path + "\\client_cache" + c_id + "\\" + filename_DS  # append the cache folder and filename to the path
+
+    os.makedirs(os.path.dirname(cache_filepath), exist_ok=True)  # create the directory/file
+    if rw == "a+" or rw == "w":
+        with open(cache_filepath, rw) as f:  # write to the cached file
+            f.write(text)
+
+    else:
+        with open(cache_filepath, "r") as f:  # read from the cached file
+            print("--------------------------------")
+            print(f.read())
+            print("--------------------------------")
+    return False
+
+  
 def send_rename(c_sock, file, filename_DS, IP_DS, PORT_DS, c_id, replicate_servers,path):
     file += ".txt"
     send_msg = file + "|" + filename_DS + "|" + "RENAME" + "|" + replicate_servers + "|" + path + "|" + c_id
