@@ -114,3 +114,13 @@ def main():
                 # filename2 = newfilename + ".txt"
                 # fv_map[filename2] = a
                 # del fv_map[filename1]
+        elif "<quit>" in c_input:
+            sys.exit()
+        else:
+            print("Selection is wrong")
+            time.sleep(0.5)
+            client_functions.menu()
+
+if __name__ == "__main__":
+    main()
+
