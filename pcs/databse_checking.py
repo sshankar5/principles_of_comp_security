@@ -243,8 +243,40 @@ def delete_mappings(client_msg):
             # print(json.dump(j, file, indent=4))
     return data
   
+def change_path(client_msg):
+    oldpath=client_msg.split("|")[1]
+    newpath=client_msg.split("|")[2]
+    with open("filemappings.txt", 'rb') as file:
+        cred_decrypt = file.read()
+        dat = c_Pkey.decrypt(cred_decrypt).decode('utf-8')
+        j=eval(dat)
+        c=0
+        mn=oldpath.split("\\")
+        if len(mn)==1:
+            for key, i in j.items():
+                if ".txt" not in j[key]['path']:
+                    k=len(mn)
+                    s=newpath+j[key]['path'][k:]
+                    j[key]['path']=s
+                    c=1
+        else:
+            for key, i in j.items():
+                print(oldpath)
+                print(j[key]['path'])
+                if j[key]['path']==oldpath:
+                    print("entered this block")
+                    j[key]['path']=newpath
+                    c=1
+        if c==1:
+            with open("filemappings.txt", 'wb') as file:
+                print(j)
+                dat=str(j)
+                d1 = c_Pkey.encrypt(dat.encode('utf-8'))
+                file.write(d1)
+    return "GOOD"
+
   
-  def create_userid(client_msg):
+def create_userid(client_msg):
     username, pwd = client_msg.split('|')[3:]
     print(username, pwd)
     details = []
