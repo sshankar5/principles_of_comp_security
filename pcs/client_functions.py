@@ -40,7 +40,22 @@ def verification_user(username, pwd):
     resp = c_Pkey.decrypt(resp).decode('utf-8')
     return resp
   
-  
+
+def menu():
+    print("\n----------------MENU---------------")
+    print("<create> [filename] [permission]- Create the file")
+    print("\t\t\tchoose the permission from below: 1 -> read_only, 2 -> read_write, 3 -> restricted")
+    print("<write> [Filename] - Write text to a file")
+    print("<read> [Filename] - Read from a file")
+    print("<rename> [oldfilename] [newfilename] - Rename the file")
+    print("<delete> [filename] - Delete the file")
+    print("<CDIR> [Dirname]- create the directory")
+    print("<CHDIR> [Dirname]- change to the other directory")
+    print("<RDIR> [OldDirname] [NewDirname]- Rename the directory")
+    print("<quit> - Quit from the application")
+    print("-------------------------------------")
+
+    
 def send_rename(c_sock, file, filename_DS, IP_DS, PORT_DS, c_id, replicate_servers,path):
     file += ".txt"
     send_msg = file + "|" + filename_DS + "|" + "RENAME" + "|" + replicate_servers + "|" + path + "|" + c_id
@@ -171,6 +186,22 @@ def validity(input, rename=0):
         return False
     else:
         return True  
+
+    
+def lock_unlock_file(c_sock, c_id, filename, flag):
+    c_sock.connect((lock_ip, lock_port))
+    msg = ""
+    if flag == "lock":
+        # msg = filename + "|" + "_1_:" + "| |" + c_id
+        msg = c_id + "|_1_:|" + filename  # 1 = lock the file
+    elif flag == "unlock":
+        # msg = filename + "|" + "_2_:" + "| |" + c_id
+        msg = c_id + "|_2_:|" + filename  # 2 = unlock the file
+
+    # send the string requesting file info to directory service
+    c_sock.send(msg.encode())
+    resp = c_sock.recv(1024).decode()
+    return resp
 
 def handle_create(filename, atype, c_id, flag, fv_map, dv_map, user_list):
     # file creation started
