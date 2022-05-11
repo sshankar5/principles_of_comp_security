@@ -103,3 +103,14 @@ def main():
             filename = c_input.split()[1]
             client_functions.handle_read(filename, fv_map, c_id, dv_map)
             print("<read> mode exitted")
+        elif "<rename>" in c_input:
+            while not client_functions.validity(c_input, 1):  # error check the input
+                c_input = sys.stdin.readline()
+            temp, oldfilename, newfilename = c_input.split()
+            resp = client_functions.handle_rename(oldfilename, newfilename, c_id, dv_map)
+            if resp:
+                print("file has been renamed successfully")
+                # filename1 = oldfilename + ".txt"
+                # filename2 = newfilename + ".txt"
+                # fv_map[filename2] = a
+                # del fv_map[filename1]
