@@ -103,3 +103,5 @@ What this means is that files present in the "filemappings.txt" file and the fil
 do not match and this essentialy shows that a malicious server is present. 
 If any mismatches are existing, they will be reported to the master, which is the databse_checking file.
 A malicious server message will be displayed.
+ 
+In our system we are using one key to transmit the data, one key for encrypting the filenames and directory names. Along with this we are genrating one key per user. It will be created when user credentials are created. While sharing the file with other users, we are not sharing the key with other users. if the user is permitted by the owner of the file then system will allow him to make changes based on the permissions. We are encrypting and decrypting the data of files using the key of the owner.
