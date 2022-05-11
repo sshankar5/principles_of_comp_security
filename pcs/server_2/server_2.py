@@ -22,6 +22,24 @@ def socket_connection():
     c_sock = socket(AF_INET, SOCK_STREAM)
     return c_sock
 
+def thread_1():                     
+  while(1):
+    server_status_check()
+    time.sleep(45)
+
+def getListOfFiles(dirName):
+    listOfFile = os.listdir(dirName)
+    allFiles = list()
+    for entry in listOfFile:
+        fullPath = os.path.join(dirName, entry) 
+        if os.path.isdir(fullPath):
+            allFiles = allFiles + getListOfFiles(fullPath)
+        else:
+            if ".txt" in entry:
+                allFiles.append(entry)
+                
+    return allFiles    
+
 
 def read_write_request(filename, rw, write_data, fv_map, c_id):
     cs1 = socket_connection()
