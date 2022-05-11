@@ -436,3 +436,108 @@ def handle_delete(file, c_id, dv_map):
         if os.path.exists(cache_filepath):
             os.remove(cache_filepath)
         return True
+    
+    def CHANGE_DIR(dirname,cid,dvmap):
+    if cid not in dvmap:
+        dvmap[cid]="EMPTY"
+    print(dvmap[cid])
+    client_socket = socket_connection()
+    msg="<CHANGEDIR>"
+    client_socket.connect((ds_ip,ds_port))
+    msg=c_Pkey.encrypt(msg.encode('utf-8'))
+    client_socket.send(msg)
+    reply = client_socket.recv(1024)
+    client_socket.close()
+    reply=c_Pkey.decrypt(reply).decode('utf-8')
+    serverName,serverPort,k=reply.split("|")
+    client_socket =socket_connection()
+    client_socket.connect((serverName,int(serverPort)))
+    msg=dirname+'|'+cid+'|'+dvmap[cid]+'|'+"<DIRCHANGE>"
+    msg=c_Pkey.encrypt(msg.encode('utf-8'))
+    client_socket.send(msg)
+    reply = client_socket.recv(1024)
+    client_socket.close()
+    reply=c_Pkey.decrypt(reply).decode('utf-8')
+    if "SUCCESS" in reply:
+        print("Directory changed successfully")
+        print("the given reply is",reply)
+        if "|" in reply:
+            dvmap[cid]=reply.split("|")[1]
+            print("the value of dvmap is",dvmap[cid])
+    else:
+        print("Directory changing failed")
+
+
+def RENAME_DIR(olddirname,newdirname,cid,dvmap):
+    if cid not in dvmap:
+       dvmap[cid]="EMPTY"
+    print(dvmap[cid])
+    client_socket = socket_connection()
+    msg="<RNAMEDIR>"
+    client_socket.connect((ds_ip,ds_port))
+    msg=c_Pkey.encrypt(msg.encode('utf-8'))
+    client_socket.send(msg)
+    reply = client_socket.recv(1024)
+    client_socket.close()
+    reply=c_Pkey.decrypt(reply).decode('utf-8')
+    serverName,serverPort,k=reply.split("|")
+    client_socket =socket_connection()
+    client_socket.connect((serverName,int(serverPort)))
+    msg=olddirname+'|'+ newdirname+'|'+cid+'|'+dvmap[cid]+'|'+"<DIRRENAME>"+'|'+k
+    msg=c_Pkey.encrypt(msg.encode('utf-8'))
+    client_socket.send(msg)
+    reply = client_socket.recv(1024)
+    client_socket.close()
+    reply=c_Pkey.decrypt(reply).decode('utf-8')
+    if "SUCCESS" in reply:
+        print("Directory renamed successfully")
+        client_socket =socket_connection()
+        client_socket.connect((ds_ip,ds_port))
+        if "|" in reply:
+            s=reply.split("|")
+            dvmap[cid]=reply.split("|")[1]
+            olddirname=dvmap[cid]+"\\"+olddirname
+            newdirname=dvmap[cid]+"\\"+newdirname
+            msg="<RENAMEDIR>"+"|"+olddirname+"|"+newdirname
+            msg=c_Pkey.encrypt(msg.encode('utf-8'))
+            client_socket.send(msg)
+            reply = client_socket.recv(1024)
+        else:
+            msg="<RENAMEDIR>"+"|"+olddirname+"|"+newdirname
+            msg=c_Pkey.encrypt(msg.encode('utf-8'))
+            client_socket.send(msg)
+            reply = client_socket.recv(1024)
+        client_socket.close()
+    else:
+        print("Directory renaming failed")
+
+def CREATE_DIR(dirname,cid,dvmap):
+    if cid not in dvmap:
+        dvmap[cid]="EMPTY"
+    print(dvmap[cid])
+    client_socket =socket_connection()
+    msg="<CREATEDIR>"
+    client_socket.connect((ds_ip,ds_port))
+    msg=c_Pkey.encrypt(msg.encode('utf-8'))
+    client_socket.send(msg)
+    reply = client_socket.recv(1024)
+    client_socket.close()
+    reply=c_Pkey.decrypt(reply).decode('utf-8')
+    serverName,serverPort,k=reply.split("|")
+    client_socket =socket_connection()
+    client_socket.connect((serverName,int(serverPort)))
+    msg=dirname+'|'+cid+'|'+dvmap[cid]+'|'+"<DIRCREATE>"+'|'+k
+    msg=c_Pkey.encrypt(msg.encode('utf-8'))
+    client_socket.send(msg)
+    reply = client_socket.recv(1024)
+    client_socket.close()
+    reply=c_Pkey.decrypt(reply).decode('utf-8')
+    if "SUCCESS" in reply:
+        print("Directory created successfully")
+        if "|" in reply:
+            s=reply.split("|")
+            if len(s)==2:
+                dvmap[cid]=reply.split("|")[1]
+    else:
+        print("Directory creation failed")
+
