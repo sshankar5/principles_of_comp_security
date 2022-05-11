@@ -100,6 +100,9 @@ def client_response(resp, rw, client_socket):
  
 
 def main():
+    T = Thread(target = thread_1)
+    T.setDaemon(True)                  
+    T.start() 
     while 1:
         client_socket, address = s_sock.accept()
         msg = client_socket.recv(1024)
